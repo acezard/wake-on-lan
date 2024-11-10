@@ -1,13 +1,44 @@
+# Node modules (dependencies)
 node_modules/
-**/node_modules/
 
-# Ignore build artifacts
-frontend/build/
+# Build outputs
 backend/dist/
+frontend/build/
 mobile/.expo/
 mobile/.expo-shared/
 
-# Ignore other OS or editor-specific files
+# Environment variables
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS-specific files
 .DS_Store
 Thumbs.db
+
+# Editor settings
 .vscode/
+.idea/
+
+# TypeScript build artifacts
+*.tsbuildinfo
+
+# React Testing/Environment Files
+frontend/src/setupTests.ts
+frontend/src/react-app-env.d.ts
+
+# Expo development files
+mobile/.expo/
+mobile/.expo-shared/
+mobile/web-build/
+
+# Temporary Files
+*.tmp
+*.swp
+
+# Ignore lockfiles (optional, if not needed for exact dependency versions)
+# package-lock.json
+# yarn.lock
