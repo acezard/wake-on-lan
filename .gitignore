@@ -1,1 +1,13 @@
 node_modules/
+**/node_modules/
+
+# Ignore build artifacts
+frontend/build/
+backend/dist/
+mobile/.expo/
+mobile/.expo-shared/
+
+# Ignore other OS or editor-specific files
+.DS_Store
+Thumbs.db
+.vscode/
