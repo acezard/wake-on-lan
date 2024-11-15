@@ -25,7 +25,7 @@ const app = express();
 const PORT = 8080;
 
 // Allow requests from specific origins
-app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:8080', 'http://192.168.1.177:8080', 'http://192.168.1.37:8080', 'http://localhost:19002'] }));
+app.use(cors());
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../../frontend/build')));
