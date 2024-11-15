@@ -76,7 +76,24 @@ app.get('/wake', async (req: Request, res: Response): Promise<void> => {
 
 // Catch-all handler for React routes
 app.get('*', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
+    try {
+        const indexPath = path.join(__dirname, '../../frontend/build/index.html');
+        console.log(indexPath)
+        res.sendFile(indexPath);
+    } catch (error) {
+        console.error('Frontend build is not available:', error.message);
+        res.status(503).send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Frontend Not Available</title>
+            </head>
+            <body>
+                <h1>Frontend is still building or not available. Please try again later.</h1>
+            </body>
+            </html>
+        `); // Return a simple "frontend is building" message
+    }
 });
 
 app.listen(PORT, '0.0.0.0', () => {

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    command: ["npm", "run", "build"]  # Build static files and exit
+    volumes:
+      - ./frontend/build:/app/build  # Save the build output to the host
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      - frontend
+    volumes:
+      - ./frontend/build:/frontend/build  # Serve prebuilt static files
+    ports:
+      - "8080:8080"
+    container_name: backend

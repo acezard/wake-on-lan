@@ -13,6 +13,11 @@
     "serve-static": "^1.16.2",
     "wol": "^1.0.7"
   },
+  "scripts": {
+    "start": "node dist/server.js",
+    "dev": "nodemon src/index.ts",
+    "build": "tsc -p ."
+  },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
