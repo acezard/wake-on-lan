@@ -9,4 +9,5 @@ RUN npm install
 # Copy backend source
 COPY . .
 
-CMD ["npm", "start"]
+# Run the build script before starting the app
+CMD ["sh", "-c", "npm run build && npm start"]
