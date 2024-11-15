@@ -81,7 +81,11 @@ app.get('*', (req: Request, res: Response) => {
         console.log(indexPath)
         res.sendFile(indexPath);
     } catch (error) {
-        console.error('Frontend build is not available:', error.message);
+        if (error instanceof Error) {
+            console.error('Frontend build is not available:', error.message);
+        } else {
+            console.error('Frontend build is not available:', error);
+        }
         res.status(503).send(`
             <!DOCTYPE html>
             <html>
