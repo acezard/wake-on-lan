@@ -2,7 +2,7 @@
 set -e  # Exit on any error
 
 log() {
-  echo "$(date +"%Y-%m-%d %H:%M:%S") - $1"
+  echo "$(date +"%Y-%m-%d %H:%M:%S") - 🐢 $1"
 }
 
 ENV=${1:-dev}  # Default to 'dev' if no argument is provided
@@ -16,36 +16,36 @@ fi
 log "Script started with ENV=$ENV and DETACHED=$DETACHED"
 
 if [ "$ENV" == "dev" ]; then
-  log "🐳 Starting in development mode..."
+  log "Starting in development mode..."
   
-  log "🐳 Stopping any running containers..."
+  log "Stopping any running containers..."
   NODE_ENV=development docker-compose down --remove-orphans
   
-  log "🐳 Building development environment (this may take a while)..."
+  log "Building development environment (this may take a while)..."
   NODE_ENV=development docker-compose build
   
   if [ "$DETACHED" == "true" ]; then
-    log "🐳 Starting services in development mode (detached)..."
+    log "Starting services in development mode (detached)..."
     NODE_ENV=development exec docker-compose up -d
   else
-    log "🐳 Starting services in development mode (attached)..."
+    log "Starting services in development mode (attached)..."
     NODE_ENV=development exec docker-compose up
   fi
 
 elif [ "$ENV" == "prod" ]; then
-  log "🐳 Starting in production mode..."
+  log "Starting in production mode..."
   
-  log "🐳 Stopping any running containers..."
+  log "Stopping any running containers..."
   NODE_ENV=production docker-compose down --remove-orphans
   
-  log "🐳 Building production environment with no cache (this may take a while)..."
+  log "Building production environment with no cache (this may take a while)..."
   NODE_ENV=production docker-compose build --no-cache
   
   if [ "$DETACHED" == "true" ]; then
-    log "🐳 Starting services in production mode (detached)..."
+    log "Starting services in production mode (detached)..."
     NODE_ENV=production exec docker-compose up -d
   else
-    log "🐳 Starting services in production mode (attached)..."
+    log "Starting services in production mode (attached)..."
     NODE_ENV=production exec docker-compose up
   fi
 

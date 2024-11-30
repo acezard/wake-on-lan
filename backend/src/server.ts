@@ -1,16 +1,15 @@
 import express, { Request, Response } from 'express';
-import path from 'path';
 import wol from 'wol';
 import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 const ping = require('ping');
 import dotenv from 'dotenv';
+import { exec } from 'child_process';
 
 dotenv.config();
 
 const SERVER_IP = process.env.SERVER_IP || '0.0.0.0';
 const PORT = parseInt(process.env.SERVER_PORT || '8080', 10);
-const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Interface for ping response
 interface PingResponse {
@@ -24,7 +23,7 @@ const checkDevice = async (ipAddress: string): Promise<boolean> => {
 };
 
 // Map PC names to MAC addresses and IPs
-const pcDetails = JSON.parse(process.env.PC_DETAILS || '{}') as Record<string, { mac: string; ip: string }>;
+const pcDetails = JSON.parse(process.env.PC_DETAILS || '{}') as Record<string, { mac: string; ip: string, rdp_user: string, rdp_password: string }>;
 
 const app = express();
 
@@ -51,7 +50,6 @@ app.get('/status', async (req: Request, res: Response): Promise<void> => {
     }
 });
 
-// Endpoint: Wake a PC
 app.get('/wake', async (req: Request, res: Response): Promise<void> => {
     const pcName = req.query.name as string;
 
@@ -60,19 +58,81 @@ app.get('/wake', async (req: Request, res: Response): Promise<void> => {
         return;
     }
 
-    const { mac } = pcDetails[pcName];
+    const { mac, ip, rdp_user, rdp_password } = pcDetails[pcName];
+
+    if (!rdp_user || !rdp_password) {
+        res.status(400).json({ error: `RDP credentials not found for ${pcName}` });
+        return;
+    }
 
     try {
+        console.log(`[${new Date().toISOString()}] Starting wake process for PC: ${pcName}`);
+
+        // Step 1: Send Wake-on-LAN packet
+        console.log(`[${new Date().toISOString()}] Sending Wake-on-LAN packet to MAC: ${mac}`);
         await new Promise<void>((resolve, reject) => {
             wol.wake(mac, { address: '255.255.255.255', port: 9 }, (err) => {
-                if (err) return reject(err);
+                if (err) {
+                    console.error(`[${new Date().toISOString()}] Failed to send WoL packet: ${err.message}`);
+                    return reject(err);
+                }
+                console.log(`[${new Date().toISOString()}] WoL packet sent successfully to ${pcName}`);
                 resolve();
             });
         });
-        res.json({ message: `Wake-on-LAN packet sent to ${pcName}'s PC (MAC: ${mac})` });
+
+        // Step 2: Poll until the PC is online
+        console.log(`[${new Date().toISOString()}] Checking if ${pcName} is online...`);
+        let online = false;
+        for (let i = 0; i < 10; i++) {
+            online = await checkDevice(ip);
+            if (online) {
+                console.log(`[${new Date().toISOString()}] ${pcName} is now online.`);
+                break;
+            }
+            console.log(`[${new Date().toISOString()}] ${pcName} is not online yet. Retrying (${i + 1}/10)...`);
+            await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
+        }
+
+        if (!online) {
+            console.error(`[${new Date().toISOString()}] ${pcName} is not online after WoL.`);
+            res.status(500).json({ error: `${pcName} is not online after WoL` });
+            return;
+        }
+
+        // Step 3: Initiate RDP session
+        console.log(`[${new Date().toISOString()}] Initiating RDP session for ${pcName}`);
+        const rdpCommand = `DISPLAY=:99 xfreerdp /u:"${rdp_user}" /p:"${rdp_password}" /v:${ip} /dynamic-resolution /cert-ignore`;
+
+        const rdpProcess = exec(rdpCommand, { shell: '/bin/sh' });
+
+        // Monitor process output
+        rdpProcess.stdout?.on('data', (data) => {
+            console.log(`[RDP Output]: ${data}`);
+        });
+
+        rdpProcess.stderr?.on('data', (data) => {
+            console.error(`[RDP Error]: ${data}`);
+        });
+
+        rdpProcess.on('close', (code) => {
+            if (code === 0) {
+                console.log(`[${new Date().toISOString()}] RDP session completed successfully for ${pcName}`);
+            } else {
+                console.error(`[${new Date().toISOString()}] RDP session failed with code ${code} for ${pcName}`);
+            }
+        });
+
+        // Step 4: Send a success response to the client
+        res.json({ message: `${pcName} unlocked and ready for Parsec or Steam.` });
     } catch (error) {
-        console.error('Failed to send WoL packet:', error);
-        res.status(500).json({ error: 'Failed to wake PC' });
+        if (error instanceof Error) {
+            console.error(`[${new Date().toISOString()}] Error during wake and unlock process for ${pcName}: ${error.message}`);
+            res.status(500).json({ error: `Failed to wake and unlock PC: ${pcName}` });
+        } else {
+            console.error(`[${new Date().toISOString()}] Unknown error during wake and unlock process for ${pcName}`);
+            res.status(500).json({ error: `Failed to wake and unlock PC: ${pcName}` });
+        }
     }
 });
 
@@ -80,46 +140,14 @@ app.get('/pcs', (req: Request, res: Response) => {
     res.json(Object.keys(pcDetails));
 });
 
-if (NODE_ENV === 'development') {
-    console.log('🛠️ Running in development mode: Proxying to React dev server...');
-    // Proxy frontend requests to React dev server
-    app.use(
-        '/',
-        createProxyMiddleware({
-            target: 'http://localhost:3000',
-            changeOrigin: true,
-        })
-    );
-} else {
-    console.log('🚀 Running in production mode: Serving frontend build...');
-    // Serve static files from the React app
-    app.use(express.static(path.join(__dirname, '../../frontend/build')));
-
-    // Catch-all handler for React routes
-    app.get('*', (req: Request, res: Response) => {
-        try {
-            const indexPath = path.join(__dirname, '../../frontend/build/index.html');
-            res.sendFile(indexPath);
-        } catch (error) {
-            if (error instanceof Error) {
-                console.error('Frontend build is not available:', error.message);
-            } else {
-                console.error('Frontend build is not available:', error);
-            }
-            res.status(503).send(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Frontend Not Available</title>
-                </head>
-                <body>
-                    <h1>Frontend is still building or not available. Please try again later.</h1>
-                </body>
-                </html>
-            `); // Return a simple "frontend is building" message
-        }
-    });
-}
+// Proxy frontend requests to React dev server
+app.use(
+    '/',
+    createProxyMiddleware({
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+    })
+);
 
 app.listen(PORT, SERVER_IP, () => {
     console.log(`Server running at http://${SERVER_IP}:${PORT}`);

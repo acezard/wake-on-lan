@@ -19,6 +19,3 @@ COPY . .
 
 # Expose port for development server
 EXPOSE 3000
-
-# Default command (overridden by docker-compose)
-CMD ["npm", "run", "start"]

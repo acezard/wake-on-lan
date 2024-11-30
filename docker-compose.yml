@@ -1,43 +1,18 @@
-version: '3.8'
-
 services:
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
       args:
-        NODE_ENV: ${NODE_ENV:-development}  # Pass NODE_ENV during build
+        NODE_ENV: ${NODE_ENV:-development}
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app  # Mount for development
+      - ./frontend:/app
       - /app/node_modules
     environment:
-      NODE_ENV: ${NODE_ENV:-development}  # Pass environment at runtime
-    command: 
-      - "sh"
-      - "-c"
-      - |
-        if [ "$NODE_ENV" = "development" ]; then
-          npm run start;
-        else
-          npm run build;
-        fi
-    restart: unless-stopped  # Restart automatically unless stopped manually
-
-  backend:
-    build:
-      context: ./backend
-      args:
-        NODE_ENV: ${NODE_ENV:-development}  # Pass NODE_ENV during build
-    network_mode: "host"  # Use host networking
-    depends_on:
-      - frontend
-    volumes:
-      - ./backend:/app  # Mount for development
-      - /app/node_modules
-    environment:
-      NODE_ENV: ${NODE_ENV:-development}  # Pass environment at runtime
-    command: 
+      NODE_ENV: ${NODE_ENV:-development}
+    command:
       - "sh"
       - "-c"
       - |
@@ -46,4 +21,27 @@ services:
         else
           npm run start;
         fi
-    restart: unless-stopped  # Restart automatically unless stopped manually
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: ${NODE_ENV:-development}
+    network_mode: "host"
+    depends_on:
+      - frontend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+    command:
+      - "sh"
+      - "-c"
+      - |
+        if [ "$NODE_ENV" = "development" ]; then
+          npm run dev;
+        else
+          npm run start;
+        fi

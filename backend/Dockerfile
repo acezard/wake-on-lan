@@ -1,24 +1,19 @@
-# Base image
 FROM node:22-alpine
 
-# Set the working directory
+# Install necessary packages
+RUN apk add --no-cache freerdp xvfb
+
 WORKDIR /app
 
-# Build arguments
 ARG NODE_ENV=development
 ENV NODE_ENV=$NODE_ENV
+ENV DISPLAY=:99
 
-# Copy package.json and lock file
 COPY package.json package-lock.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy all application files
-COPY . .
+COPY . ./
 
-# Expose the application port
 EXPOSE 8080
 
-# Default command (overridden by docker-compose)
-CMD ["npm", "run", "start"]
+CMD sh -c "Xvfb :99 -screen 0 1024x768x24"

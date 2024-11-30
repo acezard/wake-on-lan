@@ -30,11 +30,17 @@ const App: React.FC = () => {
     // Send a wake-on-LAN request for a specific PC
     const wakePC = async (pcName: string) => {
         try {
+            setNotification(`Sending Wake-on-LAN packet to ${pcName}...`);
             const response = await fetch(`${config.API_BASE_URL}/wake?name=${pcName}`);
             const data = await response.json();
             showNotification(data.message);
+
+            // Automatically refresh the status after waking
+            setNotification(`Refreshing status for ${pcName}...`);
+            await fetchStatus(pcName);
         } catch (error) {
-            showNotification(`Failed to wake ${pcName}'s PC.`);
+            console.error(`Failed to wake and unlock ${pcName}'s PC:`, error);
+            showNotification(`Failed to wake and unlock ${pcName}'s PC.`);
         }
     };
 
@@ -132,8 +138,12 @@ const App: React.FC = () => {
                         <span style={statuses[pcName] ? styles.online : styles.offline}>
                             {statuses[pcName] === undefined ? 'Loading...' : statuses[pcName] ? 'Online' : 'Offline'}
                         </span>
-                        <button style={styles.button} onClick={() => wakePC(pcName)}>
-                            Wake {pcName}'s PC
+                        <button
+                            style={styles.button}
+                            onClick={() => wakePC(pcName)}
+                            disabled={loading} // Disable button while loading
+                        >
+                            {loading ? 'Processing...' : `Wake ${pcName}'s PC`}
                         </button>
                     </div>
                 ))}
