@@ -1,7 +1,7 @@
 FROM node:22-alpine
 
 # Install necessary packages
-RUN apk add --no-cache freerdp xvfb
+RUN apk add --no-cache arp-scan
 
 WORKDIR /app
 
@@ -15,5 +15,3 @@ RUN npm install
 COPY . ./
 
 EXPOSE 8080
-
-CMD sh -c "Xvfb :99 -screen 0 1024x768x24"
