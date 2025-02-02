@@ -14,8 +14,8 @@
     "dotenv": "16.4.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-scripts": "5.0.1",
-    "serve": "^13.0.4",
+    "react-scripts": "^5.0.1",
+    "serve": "^14.2.4",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
@@ -25,7 +25,9 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "serve": "serve -s build",
-    "start": "npm run build && npm run serve"
+    "start": "npm run build && npm run serve",
+    "lint": "eslint .",
+    "format": "npx prettier . --write"
   },
   "eslintConfig": {
     "extends": [
@@ -44,5 +46,13 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.4",
+    "globals": "^15.14.0",
+    "prettier": "3.4.2",
+    "typescript-eslint": "^8.22.0"
   }
 }
