@@ -1,0 +1,28 @@
+graph LR
+    %% Network 1: PC is connected to its router via Ethernet
+    subgraph "Network 1"
+      R1[ISP Router 1]
+      PC1["PC on Network 1 (Ethernet)"]
+      R1 --- PC1
+    end
+
+    %% Network 2: PC is connected to its router via Ethernet
+    subgraph "Network 2"
+      R2[ISP Router 2]
+      PC2["PC on Network 2 (Ethernet)"]
+      R2 --- PC2
+    end
+
+    %% Raspberry Pi Server with dual connections
+    Raspi[Raspberry Pi Server]
+
+    %% Raspi connections to networks
+    Raspi -- "Ethernet (eth0)" --> R1
+    Raspi -- "WiFi (wlan0)" --> R2
+
+    %% Wake-on-LAN packet flow via the routers
+    Raspi -- "WoL packet (via eth0 broadcast)" --> R1
+    R1 -- "Broadcast to PC" --> PC1
+
+    Raspi -- "WoL packet (via wlan0 broadcast)" --> R2
+    R2 -- "Broadcast to PC" --> PC2

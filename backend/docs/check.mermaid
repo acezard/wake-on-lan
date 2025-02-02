@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant C as Client
+    participant R as Raspi Server
+    participant PC as PC (Network 2)
+
+    C->>R: GET /check?name=network2PC
+    R->>PC: TCP connection attempt to port 3389 (RDP check)
+    alt RDP port open
+        PC-->>R: Connection established
+        R-->>C: JSON { "message": "PC is alive and ready for remote access." }
+    else RDP port closed/no response
+        R-->>C: JSON { "error": "PC is offline or RDP is not active." }
+    end
