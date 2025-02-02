@@ -6,9 +6,6 @@ import { exec } from 'child_process';
 
 dotenv.config();
 
-const SERVER_IP = process.env.SERVER_IP || '0.0.0.0';
-const PORT = parseInt(process.env.SERVER_PORT || '80', 10);
-
 // Map PC names to MAC addresses and IPs
 const pcDetails = JSON.parse(process.env.PC_DETAILS || '{}') as Record<string, { mac: string; ip: string, interface: string}>;
 const app = express();
@@ -157,6 +154,6 @@ app.use(
     })
 );
 
-app.listen(PORT, SERVER_IP, () => {
-    console.log(`Server running at http://${SERVER_IP}:${PORT}`);
+app.listen(80, () => {
+    console.log("Server is running on port 80");
 });
