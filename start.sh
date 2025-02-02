@@ -15,11 +15,23 @@ fi
 
 log "Script started with ENV=$ENV and DETACHED=$DETACHED"
 
+# Gentler cleanup: Remove stopped containers, networks, build cache, and volumes,
+# but leave images intact so that frequently used images (like node:22-alpine) remain.
+cleanup() {
+  log "Cleaning up stopped containers, networks, builder cache, and unused volumes..."
+  docker container prune -f
+  docker network prune -f
+  docker builder prune -f
+  docker volume prune -f
+}
+
 if [ "$ENV" == "dev" ]; then
   log "Starting in development mode..."
   
   log "Stopping any running containers..."
-  NODE_ENV=development docker-compose down --remove-orphans
+  NODE_ENV=development docker-compose down --remove-orphans --volumes
+  
+  cleanup
   
   log "Building development environment (this may take a while)..."
   NODE_ENV=development docker-compose build
@@ -36,7 +48,9 @@ elif [ "$ENV" == "prod" ]; then
   log "Starting in production mode..."
   
   log "Stopping any running containers..."
-  NODE_ENV=production docker-compose down --remove-orphans
+  NODE_ENV=production docker-compose down --remove-orphans --volumes
+  
+  cleanup
   
   log "Building production environment with no cache (this may take a while)..."
   NODE_ENV=production docker-compose build --no-cache
