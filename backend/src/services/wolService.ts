@@ -31,7 +31,7 @@ export async function wakePC(
   console.log(`Polling to check if PC is online...`);
   let online = false;
   for (let i = 0; i < retries; i++) {
-    online = await isPCOnline(ip);
+    online = await isPCOnline(ip, netInterface);
     if (online) {
       console.log(`PC is now online.`);
       return;

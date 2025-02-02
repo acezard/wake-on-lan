@@ -24,7 +24,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
     console.log(
       `Checking status for ${pcName} on ${finalInterface} in subnet ${subnet} (MAC: ${mac})`,
     );
-    const online = await isPCOnline(ip);
+    const online = await isPCOnline(ip, netInterface);
     res.json({ name: pcName, online });
   } catch (error) {
     console.error(`Error checking status of ${pcName}:`, error);
