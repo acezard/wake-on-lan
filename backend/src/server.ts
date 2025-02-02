@@ -7,7 +7,7 @@ import { exec } from 'child_process';
 dotenv.config();
 
 const SERVER_IP = process.env.SERVER_IP || '0.0.0.0';
-const PORT = parseInt(process.env.SERVER_PORT || '8080', 10);
+const PORT = parseInt(process.env.SERVER_PORT || '80', 10);
 
 // Map PC names to MAC addresses and IPs
 const pcDetails = JSON.parse(process.env.PC_DETAILS || '{}') as Record<string, { mac: string; ip: string, interface: string}>;
