@@ -3,10 +3,22 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
+import logger from "./utils/logger";
+
+// Global error handler
+window.onerror = (message, source, lineno, colno, error) => {
+  logger.error("Unhandled error", { message, source, lineno, colno, error });
+};
+
+// Global promise rejection handler
+window.addEventListener("unhandledrejection", (event) => {
+  logger.error("Unhandled promise rejection", { reason: event.reason });
+});
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
+
 root.render(
   <React.StrictMode>
     <App />

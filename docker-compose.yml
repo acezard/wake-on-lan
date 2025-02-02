@@ -4,7 +4,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NODE_ENV: ${NODE_ENV:-development}
+      - NODE_ENV=${NODE_ENV:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     ports:
       - "3000:3000"
     volumes:
@@ -35,7 +36,8 @@ services:
       - ./backend:/app
       - /app/node_modules
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      - NODE_ENV=${NODE_ENV:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     command:
       - "sh"
       - "-c"

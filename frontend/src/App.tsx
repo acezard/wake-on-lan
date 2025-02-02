@@ -1,92 +1,104 @@
 import React, { useCallback, useEffect, useState } from "react";
 import config from "./config";
 import { styles } from "./styles";
+import logger from "./utils/logger";
 
 const App: React.FC = () => {
   const [pcNames, setPCNames] = useState<string[]>([]);
-  const [statuses, setStatuses] = useState<{
-    [key: string]: boolean | undefined;
-  }>({});
+  const [statuses, setStatuses] = useState<{ [key: string]: boolean | undefined }>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [pcLoading, setPCLoading] = useState<{ [key: string]: boolean }>({});
 
   const fetchStatus = useCallback(async (pcName: string) => {
-    // Mark this PC as loading
-    setPCLoading((prev) => ({ ...prev, [pcName]: true }));
+    setPCLoading((prev) => ({ ...prev, [pcName]: true })); // Mark this PC as loading
     try {
-      const response = await fetch(
-        `${config.API_BASE_URL}/status?name=${pcName}`,
-      );
+      logger.info(`Fetching status for ${pcName}...`);
+      const response = await fetch(`${config.API_BASE_URL}/status?name=${pcName}`);
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+
       const data = await response.json();
       setStatuses((prevStatuses) => ({
         ...prevStatuses,
         [pcName]: data.online,
       }));
+      logger.info(`Status for ${pcName}: ${data.online ? "ONLINE" : "OFFLINE"}`);
     } catch (error) {
-      console.error(`Failed to fetch status for ${pcName}:`, error);
+      logger.error(`Failed to fetch status for ${pcName}`, { error });
+      showNotification(`Error: Failed to fetch status for ${pcName}`);
     } finally {
-      // Unmark this PC as loading
-      setPCLoading((prev) => ({ ...prev, [pcName]: false }));
+      setPCLoading((prev) => ({ ...prev, [pcName]: false })); // Unmark this PC as loading
     }
   }, []);
 
   const refreshStatuses = useCallback(async () => {
-    setLoading(true); // This could be a global refresh indicator, if desired
+    setLoading(true);
+    logger.info("Refreshing all PC statuses...");
     await Promise.all(pcNames.map((name) => fetchStatus(name)));
     setLoading(false);
   }, [fetchStatus, pcNames]);
 
-  // Send a wake-on-LAN request for a specific PC
   const wakePC = async (pcName: string) => {
     try {
+      logger.info(`Sending Wake-on-LAN request for ${pcName}...`);
       setNotification(`Sending Wake-on-LAN packet to ${pcName}...`);
-      const response = await fetch(
-        `${config.API_BASE_URL}/wake?name=${pcName}`,
-      );
+
+      const response = await fetch(`${config.API_BASE_URL}/wake?name=${pcName}`);
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+
       const data = await response.json();
       showNotification(data.message);
+      logger.info(`Wake-on-LAN successful for ${pcName}`);
 
-      // Automatically refresh the status after waking
       setNotification(`Refreshing status for ${pcName}...`);
       await fetchStatus(pcName);
     } catch (error) {
-      console.error(`Failed to wake ${pcName}'s PC:`, error);
-      showNotification(`Failed to wake ${pcName}'s PC.`);
+      logger.error(`Failed to wake ${pcName}`, { error });
+      showNotification(`Failed to wake ${pcName}.`);
     }
   };
 
-  // Show a notification
   const showNotification = (message: string) => {
     setNotification(message);
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Fetch the list of PCs on load
   useEffect(() => {
     const fetchPCNames = async () => {
       try {
+        logger.info("Fetching PC names...");
+        logger.debug("test")
         const response = await fetch(`${config.API_BASE_URL}/pcs`);
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`);
+        }
+
         const names = await response.json();
         setPCNames(names);
-        // Initialize statuses for all PC names
+        logger.info(`Received PC names: ${names.join(", ")}`);
+
         const initialStatuses = names.reduce(
           (acc: { [key: string]: boolean | undefined }, name: string) => {
             acc[name] = undefined;
             return acc;
-          },
-          {},
-        );
+          }, {});
         setStatuses(initialStatuses);
       } catch (error) {
-        console.error("Failed to fetch PC names:", error);
+        logger.error("Failed to fetch PC names", { error });
+        showNotification("Error: Could not fetch PC names.");
       }
     };
 
     fetchPCNames();
   }, []);
 
-  // Once pcNames are loaded, refresh the statuses
   useEffect(() => {
     if (pcNames.length > 0) {
       refreshStatuses();
@@ -103,16 +115,12 @@ const App: React.FC = () => {
           <div key={pcName} style={_styles.pcStatus}>
             <strong>{pcName}&apos;s PC:</strong>{" "}
             <span style={statuses[pcName] ? _styles.online : _styles.offline}>
-              {statuses[pcName] === undefined
-                ? "Loading..."
-                : statuses[pcName]
-                  ? "Online"
-                  : "Offline"}
+              {statuses[pcName] === undefined ? "Loading..." : statuses[pcName] ? "Online" : "Offline"}
             </span>
             <button
               style={_styles.button}
               onClick={() => wakePC(pcName)}
-              disabled={pcLoading[pcName]} // Disable only if this PC is processing
+              disabled={pcLoading[pcName]}
             >
               {pcLoading[pcName] ? "Processing..." : `Wake ${pcName}'s PC`}
             </button>
@@ -122,7 +130,7 @@ const App: React.FC = () => {
       <button
         style={{ ..._styles.button, ..._styles.refreshButton }}
         onClick={refreshStatuses}
-        disabled={loading} // Global refresh loading state, if desired
+        disabled={loading}
       >
         {loading ? "Refreshing..." : "Refresh Status"}
       </button>

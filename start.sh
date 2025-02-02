@@ -5,18 +5,49 @@ log() {
   echo "$(date +"%Y-%m-%d %H:%M:%S") - 🐢 $1"
 }
 
-ENV=${1:-dev}  # Default to 'dev' if no argument is provided
-# Default DETACHED to 'false' for dev, 'true' for prod
+# Parse arguments
+ENV=dev  # Default environment
+detached=false
+debug=false
+
+for arg in "$@"; do
+  case $arg in
+    dev|prod|debug)  # Recognize 'debug' as a valid environment
+      ENV=$arg
+      ;;
+    true|false)
+      detached=$arg
+      ;;
+    --debug)
+      debug=true
+      ;;
+    *)
+      log "❌ Unknown argument: $arg"
+      log "Usage: $0 [dev|prod|debug] [true|false (for detached mode)] [--debug]"
+      exit 1
+      ;;
+  esac
+done
+
+# Set correct environment variables
 if [ "$ENV" == "prod" ]; then
-  DETACHED=${2:-true}
+  DETACHED=${detached:-true}
+  export NODE_ENV=production
+elif [ "$ENV" == "debug" ]; then
+  DETACHED=${detached:-false}
+  export NODE_ENV=development
+  export LOG_LEVEL=debug
 else
-  DETACHED=${2:-false}
+  DETACHED=${detached:-false}
+  export NODE_ENV=development
 fi
 
-log "Script started with ENV=$ENV and DETACHED=$DETACHED"
+if [ "$debug" == "true" ]; then
+  export LOG_LEVEL=debug
+fi
 
-# Gentler cleanup: Remove stopped containers, networks, build cache, and volumes,
-# but leave images intact so that frequently used images (like node:22-alpine) remain.
+log "Script started with ENV=$ENV, DETACHED=$DETACHED, DEBUG=$debug"
+
 cleanup() {
   log "Cleaning up stopped containers, networks, builder cache, and unused volumes..."
   docker container prune -f
@@ -25,48 +56,20 @@ cleanup() {
   docker volume prune -f
 }
 
-if [ "$ENV" == "dev" ]; then
-  log "Starting in development mode..."
-  
-  log "Stopping any running containers..."
-  NODE_ENV=development docker-compose down --remove-orphans --volumes
-  
-  cleanup
-  
-  log "Building development environment (this may take a while)..."
-  NODE_ENV=development docker-compose build
-  
-  if [ "$DETACHED" == "true" ]; then
-    log "Starting services in development mode (detached)..."
-    NODE_ENV=development exec docker-compose up -d
-  else
-    log "Starting services in development mode (attached)..."
-    NODE_ENV=development exec docker-compose up
-  fi
+log "Stopping any running containers..."
+docker-compose down --remove-orphans --volumes
 
-elif [ "$ENV" == "prod" ]; then
-  log "Starting in production mode..."
-  
-  log "Stopping any running containers..."
-  NODE_ENV=production docker-compose down --remove-orphans --volumes
-  
-  cleanup
-  
-  log "Building production environment with no cache (this may take a while)..."
-  NODE_ENV=production docker-compose build --no-cache
-  
-  if [ "$DETACHED" == "true" ]; then
-    log "Starting services in production mode (detached)..."
-    NODE_ENV=production exec docker-compose up -d
-  else
-    log "Starting services in production mode (attached)..."
-    NODE_ENV=production exec docker-compose up
-  fi
+cleanup
 
+log "Building $ENV environment (this may take a while)..."
+docker-compose build $( [ "$ENV" == "prod" ] && echo "--no-cache" )
+
+if [ "$DETACHED" == "true" ]; then
+  log "Starting services in $ENV mode (detached)..."
+  exec env NODE_ENV=$NODE_ENV LOG_LEVEL=$LOG_LEVEL docker-compose up -d
 else
-  log "❌ Unknown environment: $ENV"
-  log "Usage: $0 [dev|prod] [true|false (for detached mode)]"
-  exit 1
+  log "Starting services in $ENV mode (attached)..."
+  exec env NODE_ENV=$NODE_ENV LOG_LEVEL=$LOG_LEVEL docker-compose up
 fi
 
 log "✅ Script completed successfully."
