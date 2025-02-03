@@ -65,7 +65,11 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-      
+
+      - name: Fix workspace permissions
+        run: |
+          sudo chown -R $(whoami):$(whoami) .
+
       - name: Clean previous build artifacts
         run: |
           rm -rf ./backend/build ./frontend/build ./backend/logs
