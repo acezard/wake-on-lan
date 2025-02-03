@@ -51,6 +51,10 @@ jobs:
         working-directory: ./frontend
         run: npm run lint
 
+      - name: Type Check Frontend Code
+        working-directory: ./frontend
+        run: npm run type-check
+
       - name: Run Frontend Tests
         working-directory: ./frontend
         run: npm run test -- --watchAll=false

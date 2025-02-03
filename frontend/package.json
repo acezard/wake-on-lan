@@ -28,7 +28,8 @@
     "serve": "serve -s build",
     "start": "npm run build && npm run serve",
     "lint": "eslint .",
-    "format": "npx prettier . --write"
+    "format": "npx prettier . --write",
+    "type-check": "tsc --noEmit"
   },
   "eslintConfig": {
     "extends": [
