@@ -65,6 +65,10 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+      
+      - name: Clean previous build artifacts
+        run: |
+          rm -rf ./backend/build ./frontend/build ./backend/logs
 
       # Create .env files from secrets
       - name: Create backend .env file
