@@ -15,3 +15,5 @@ logs
 
 # System files
 .DS_Store
+
+.act.secrets
