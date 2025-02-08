@@ -30,7 +30,8 @@
     "start": "npm run build && node build/server.js",
     "lint": "eslint .",
     "format": "npx prettier . --write",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "jest"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",

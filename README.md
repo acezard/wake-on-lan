@@ -127,6 +127,86 @@ The environment is controlled via the `NODE_ENV` variable:
 
 ---
 
+## **Technologies Used**
+- **Frontend**:
+  - React
+  - TypeScript
+  - Testing Library
+  - Prettier
+  - ESLint
+- **Backend**:
+  - Node.js
+  - Express
+  - TypeScript
+  - Winston (for logging)
+  - Jest (for testing)
+  - Prettier
+  - ESLint
+
+---
+
+## **Project Structure**
+```
+.
+├── backend/
+│   ├── src/
+│   │   ├── config.ts
+│   │   ├── routes/
+│   │   │   ├── logs.ts
+│   │   │   ├── pcs.ts
+│   │   │   ├── status.ts
+│   │   │   ├── wake.ts
+│   │   ├── server.ts
+│   │   ├── services/
+│   │   │   ├── statusCheckService.ts
+│   │   │   ├── wolService.ts
+│   │   ├── tests/
+│   │   │   ├── statusCheckService.test.ts
+│   │   │   ├── wolService.test.ts
+│   │   ├── types.ts
+│   │   ├── utils/
+│   │   │   ├── logger.ts
+│   ├── package.json
+│   ├── tsconfig.json
+├── frontend/
+│   ├── src/
+│   │   ├── App.css
+│   │   ├── App.test.tsx
+│   │   ├── App.tsx
+│   │   ├── config.ts
+│   │   ├── index.css
+│   │   ├── index.tsx
+│   │   ├── logo.svg
+│   │   ├── reportWebVitals.ts
+│   │   ├── styles.ts
+│   │   ├── utils/
+│   │   │   ├── logger.ts
+│   ├── package.json
+│   ├── tsconfig.json
+├── docker-compose.yml
+├── start.sh
+```
+
+---
+
+## **Running Tests**
+
+### Backend
+To run tests for the backend:
+```bash
+cd backend
+npm run test
+```
+
+### Frontend
+To run tests for the frontend:
+```bash
+cd frontend
+npm run test
+```
+
+---
+
 ## **Troubleshooting**
 
 1. **Permission Denied for Docker Socket**:
