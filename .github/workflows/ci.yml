@@ -83,6 +83,6 @@ jobs:
 
       - name: Deploy Application
         run: |
-          git pull origin main
+          git pull origin main 
           chmod +x start.sh
           ./start.sh prod true
