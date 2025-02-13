@@ -72,6 +72,7 @@ jobs:
 
       - name: Clean previous build artifacts
         run: |
+          sudo chown -R $(whoami) .
           rm -rf ./backend/build ./frontend/build ./backend/logs
 
       # Create .env files from secrets
