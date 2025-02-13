@@ -63,9 +63,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
       - name: Fix workspace permissions
         run: |
           sudo chown -R $(whoami):$(whoami) .
@@ -74,6 +71,9 @@ jobs:
         run: |
           sudo chown -R $(whoami) .
           rm -rf ./backend/build ./frontend/build ./backend/logs
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
       # Create .env files from secrets
       - name: Create backend .env file
