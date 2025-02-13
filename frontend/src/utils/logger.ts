@@ -16,7 +16,7 @@ function handleLog(level: "debug" | "info" | "warn" | "error", message: string, 
   }
 
   // ✅ Send logs to backend
-  fetch("/logs", {
+  fetch("/wol/logs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ level, message, data }),

@@ -22,4 +22,4 @@ RUN if [ "$NODE_ENV" = "production" ]; then \
 # Copy the rest of the application code
 COPY . ./
 
-EXPOSE 80
+EXPOSE 8080
