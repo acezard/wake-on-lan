@@ -2,8 +2,13 @@ import winston from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
 import path from "path";
 
-// 🔍 Determine log level from environment
-const logLevel = process.env.LOG_LEVEL || "info";
+// 🔍 Determine log level from environment, defaulting to 'info'
+const env = process.env.NODE_ENV || 'development';
+const defaultLevel = process.env.LOG_LEVEL || 'info';
+
+// 🔍 In test environment, only log errors to reduce noise
+const consoleLevel = env === 'test' ? 'error' : defaultLevel;
+
 const logDirectory = path.join(__dirname, "../../logs");
 
 // 🔥 Log file rotation setup
@@ -13,12 +18,12 @@ const dailyRotateTransport = new DailyRotateFile({
   zippedArchive: true,
   maxSize: "10m",
   maxFiles: "14d",
-  level: logLevel, // ✅ File logs respect `LOG_LEVEL`
+  level: defaultLevel, // File logs respect LOG_LEVEL
 });
 
 // 🔥 Create Winston Logger
 const logger = winston.createLogger({
-  level: logLevel, // ✅ This controls what gets logged globally
+  level: defaultLevel, // Controls global logging threshold
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.printf(({ timestamp, level, message }) => {
@@ -27,13 +32,14 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console({
-      level: logLevel, // ✅ Console logs also respect `LOG_LEVEL`
+      level: consoleLevel,        // Console respects test override
+      silent: env === 'test',     // Silence console entirely in tests
     }),
-    dailyRotateTransport, // ✅ File logs respect `LOG_LEVEL`
+    dailyRotateTransport,
   ],
 });
 
-// 🔍 Announce current log level
-logger.info(`Logger initialized with level: ${logLevel.toUpperCase()}`);
+// 🔍 Announce current log level (will only show outside test env)
+logger.info(`Logger initialized with level: ${defaultLevel.toUpperCase()} (env=${env})`);
 
 export default logger;
