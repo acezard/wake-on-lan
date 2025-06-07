@@ -1,57 +1,97 @@
 import { isPCOnline } from "./statusCheckService";
-import net from "net";
+import { exec, ExecException } from "child_process";
 
-jest.mock("net");
+jest.mock("child_process", () => ({
+  exec: jest.fn(),
+}));
 
-describe("isPCOnline", () => {
-  const mockSocket = {
-    setTimeout: jest.fn(),
-    once: jest.fn(),
-    destroy: jest.fn(),
-    connect: jest.fn(),
+jest.mock("./statusCheckService", () => {
+  const original = jest.requireActual("./statusCheckService");
+  return {
+    ...original,
+    getLocalAddress: () => undefined,
   };
+});
+
+const mockExec = exec as jest.MockedFunction<typeof exec>;
+
+describe("isPCOnline (ARP)", () => {
+  const ip = "192.168.1.666";
+  const iface = "wlan0";
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (net.Socket as unknown as jest.Mock).mockImplementation(() => mockSocket);
   });
 
-  it("should resolve true when connection is successful", async () => {
-    const ip = "192.168.1.1";
-    const netInterface = "eth0";
-    const port = 3389;
+  /**
+   * Helper to simulate exec callback for both two-arg and three-arg invocations.
+   */
+  function simulateExec(
+    err: ExecException | null,
+    stdout: string,
+    stderr: string
+  ) {
+    mockExec.mockImplementation(
+      (
+        cmd: string,
+        optionsOrCb?: unknown,
+        cb?: unknown
+      ) => {
+        // Determine which argument is the callback
+        const callback = typeof optionsOrCb === "function"
+          ? optionsOrCb as ((
+              error: ExecException | null,
+              stdout: string,
+              stderr: string
+            ) => void)
+          : cb as ((
+              error: ExecException | null,
+              stdout: string,
+              stderr: string
+            ) => void);
 
-    const promise = isPCOnline(ip, netInterface, port);
+        // Invoke callback with simulated results
+        callback(err, stdout, stderr);
 
-    mockSocket.once.mock.calls[0][1](); // Simulate 'connect' event
+        // Return dummy ChildProcess
+        return {
+          pid: 1,
+          stdin: null,
+          stdout: null,
+          stderr: null,
+          stdio: [],
+          kill() {},
+          send() { return false; },
+          disconnect() {},
+          unref() {},
+          ref() {}
+        } as unknown as import("child_process").ChildProcess;
+      }
+    );
+  }
 
-    const result = await promise;
-    expect(result).toBe(true);
+  it("should resolve true when arping replies", async () => {
+    simulateExec(
+      null,
+      "1 packets transmitted, 1 received, 0% packet loss\nbytes from 74:56:3c:e6:f9:c2 (\"192.168.1.666\"): index=0 time=4.593 ms",
+      ""
+    );
+
+    await expect(isPCOnline(ip, iface, 3000)).resolves.toBe(true);
+    expect(mockExec).toHaveBeenCalled();
   });
 
-  it("should resolve false when connection times out", async () => {
-    const ip = "192.168.1.1";
-    const netInterface = "eth0";
-    const port = 3389;
+  it("should resolve false when arping returns an error", async () => {
+    simulateExec(new Error("exec error"), "", "error output");
 
-    const promise = isPCOnline(ip, netInterface, port);
-
-    mockSocket.once.mock.calls[1][1](); // Simulate 'timeout' event
-
-    const result = await promise;
-    expect(result).toBe(false);
+    await expect(isPCOnline(ip, iface, 3000)).resolves.toBe(false);
+    expect(mockExec).toHaveBeenCalled();
   });
 
-  it("should resolve false when connection fails", async () => {
-    const ip = "192.168.1.1";
-    const netInterface = "eth0";
-    const port = 3389;
+  it("should resolve false when no ARP reply in stdout", async () => {
+    simulateExec(null, "0 packets transmitted, 0 received, 100% packet loss", "");
 
-    const promise = isPCOnline(ip, netInterface, port);
-
-    mockSocket.once.mock.calls[2][1](new Error("Connection error")); // Simulate 'error' event
-
-    const result = await promise;
-    expect(result).toBe(false);
+    await expect(isPCOnline(ip, iface, 3000)).resolves.toBe(false);
+    expect(mockExec).toHaveBeenCalled();
   });
 });
