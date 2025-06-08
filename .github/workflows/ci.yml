@@ -62,6 +62,9 @@ jobs:
     needs: [backend, frontend]
     if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
+    env:
+      PORT: 8080
+      PC_DETAILS: ${{ secrets.PC_DETAILS }}
     steps:
       - name: Fix workspace permissions
         run: |
@@ -74,10 +77,6 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@v3
-
-      # Create .env files from secrets
-      - name: Create backend .env file
-        run: echo "${{ secrets.BACKEND_ENV }}" > ./backend/.env
 
       - name: Create frontend .env file
         run: echo "${{ secrets.FRONTEND_ENV }}" > ./frontend/.env
