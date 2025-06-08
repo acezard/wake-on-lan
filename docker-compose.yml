@@ -38,6 +38,8 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - PC_DETAILS=${PC_DETAILS}
+      - PORT=${PORT}
     command:
       - "sh"
       - "-c"
